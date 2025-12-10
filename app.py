@@ -1,15 +1,33 @@
 import os
+import sqlite3
 from flask import Flask, render_template, request
 from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
 
-# CONFIGURACIÓN: Carpeta donde caerán las fotos
-CARPETA_FOTOS = 'uploads'
-app.config['UPLOAD_FOLDER'] = CARPETA_FOTOS
+# Configuración: Carpeta de fotos
+app.config['UPLOAD_FOLDER'] = 'uploads'
+os.makedirs('uploads', exist_ok=True)
 
-# MAGIA: Crea la carpeta automáticamente si no existe
-os.makedirs(CARPETA_FOTOS, exist_ok=True)
+# --- FUNCIÓN: INICIAR BASE DE DATOS ---
+def init_db():
+    # Conectamos con el archivo 'datos.db'
+    conn = sqlite3.connect('datos.db')
+    cursor = conn.cursor()
+    # Creamos la tabla 'registros' con 4 columnas: id, fecha, peso, foto
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS registros (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            peso REAL,
+            foto TEXT
+        )
+    ''')
+    conn.commit()
+    conn.close()
+
+# Ejecutamos esto UNA VEZ al arrancar para asegurar que la tabla exista
+init_db()
 
 @app.route('/')
 def inicio():
@@ -17,25 +35,28 @@ def inicio():
 
 @app.route('/subir', methods=['POST'])
 def subir_datos():
-    # 1. Capturamos el peso
+    # 1. Recibir datos
     peso = request.form['peso']
+    if 'foto' not in request.files: return "Sin foto"
+    f = request.files['foto']
     
-    # 2. Capturamos la foto
-    if 'foto' not in request.files:
-        return "No enviaste foto."
-    
-    archivo_foto = request.files['foto']
-
-    # 3. Guardamos la foto
-    if archivo_foto.filename != '':
-        nombre_seguro = secure_filename(archivo_foto.filename)
-        ruta_final = os.path.join(app.config['UPLOAD_FOLDER'], nombre_seguro)
+    if f.filename != '':
+        # 2. Guardar archivo de foto
+        nombre = secure_filename(f.filename)
+        ruta_foto = os.path.join(app.config['UPLOAD_FOLDER'], nombre)
+        f.save(ruta_foto)
         
-        archivo_foto.save(ruta_final)
+        # 3. --- GUARDAR EN BASE DE DATOS ---
+        conn = sqlite3.connect('datos.db')
+        cursor = conn.cursor()
+        # Insertamos el peso y el nombre de la foto
+        cursor.execute("INSERT INTO registros (peso, foto) VALUES (?, ?)", (peso, nombre))
+        conn.commit()
+        conn.close()
         
-        return f"<h1>¡Éxito!</h1><p>Peso: {peso}</p><p>Foto guardada en: {ruta_final}</p>"
+        return "<h1>¡Guardado en Base de Datos!</h1><p>Tu progreso ha sido registrado.</p><a href='/'>Volver</a>"
 
-    return "Error al guardar."
+    return "Error al subir"
 
 if __name__ == '__main__':
     app.run(debug=True)
