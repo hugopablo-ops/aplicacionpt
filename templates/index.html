@@ -2,27 +2,19 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Control Personal Trainer</title>
-    <style>
-        body { font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; }
-        .form-group { margin-bottom: 15px; }
-        label { display: block; margin-bottom: 5px; font-weight: bold; }
-        input { width: 100%; padding: 8px; }
-        button { background-color: #28a745; color: white; padding: 10px 20px; border: none; cursor: pointer; }
-    </style>
+    <title>Subir Progreso</title>
 </head>
 <body>
     <h1>Registro Semanal</h1>
+    
     <form action="/subir" method="POST" enctype="multipart/form-data">
-        <div class="form-group">
-            <label>Peso Actual (kg):</label>
-            <input type="number" step="0.1" name="peso" required placeholder="Ej: 80.5">
-        </div>
-        <div class="form-group">
-            <label>Foto de Frente:</label>
-            <input type="file" name="foto" accept="image/*">
-        </div>
-        <button type="submit">Guardar Progreso</button>
+        
+        <p>Peso (kg): <input type="number" name="peso" step="0.1" required></p>
+        
+        <p>Foto: <input type="file" name="foto" required></p>
+        
+        <button type="submit">Guardar Foto</button>
+    
     </form>
 </body>
 </html>
